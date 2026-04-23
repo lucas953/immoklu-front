@@ -1,0 +1,21 @@
+{
+  "name": "@immoklu/api-client",
+  "version": "0.0.0",
+  "private": true,
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "lint": "echo \"No api-client lint configured yet\"",
+    "typecheck": "tsc --noEmit",
+    "test": "echo \"No api-client tests configured yet\""
+  },
+  "dependencies": {
+    "@immoklu/types": "*",
+    "@tanstack/react-query": "^5.76.2",
+    "react": "^19.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}
