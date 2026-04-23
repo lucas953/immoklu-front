@@ -1,5 +1,6 @@
 export * from "./api/auth";
 export * from "./api/dashboard";
+export * from "./api/documents";
 export * from "./api/expense-categories";
 export * from "./api/expenses";
 export * from "./api/leases";
@@ -9,6 +10,7 @@ export * from "./api/tenants";
 export * from "./api/workspace";
 export * from "./domain/auth-session";
 export * from "./domain/dashboard";
+export * from "./domain/document";
 export * from "./domain/expense";
 export * from "./domain/expense-category";
 export * from "./domain/lease";

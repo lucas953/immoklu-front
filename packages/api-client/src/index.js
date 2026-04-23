@@ -1,5 +1,6 @@
 export * from "./auth";
 export * from "./dashboard";
+export * from "./documents";
 export * from "./expense-categories";
 export * from "./expenses";
 export * from "./leases";
@@ -10,6 +11,7 @@ export * from "./workspace";
 export * from "./hooks/use-auth";
 export * from "./hooks/use-api-health";
 export * from "./hooks/use-dashboard";
+export * from "./hooks/use-documents";
 export * from "./hooks/use-expense-categories";
 export * from "./hooks/use-expenses";
 export * from "./hooks/use-leases";
