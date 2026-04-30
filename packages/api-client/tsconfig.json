@@ -1,7 +1,10 @@
 {
   "extends": "../config/typescript/base.json",
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx"
-  ]
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "declaration": true,
+    "declarationMap": true
+  },
+  "include": ["src/**/*.ts"]
 }
