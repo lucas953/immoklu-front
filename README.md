@@ -31,4 +31,6 @@ npx.cmd turbo run typecheck
 - Web is the primary product surface.
 - Mobile is intentionally a companion app in v1.
 - API contracts should be generated from `immoklu-back` OpenAPI into `packages/api-client`.
-- The web app expects the backend at `NEXT_PUBLIC_API_URL`, which defaults to `http://localhost:4000`.
+- The web app expects the backend at `NEXT_PUBLIC_API_URL`.
+- Local development falls back to `http://localhost:4000` when `NEXT_PUBLIC_API_URL` is omitted.
+- Vercel production must define `NEXT_PUBLIC_API_URL` with the deployed backend URL.

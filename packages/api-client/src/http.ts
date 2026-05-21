@@ -15,7 +15,17 @@ export class ApiError extends Error {
 }
 
 export function getApiBaseUrl() {
-  return process.env.NEXT_PUBLIC_API_URL ?? DEFAULT_API_URL;
+  const configuredUrl = process.env.NEXT_PUBLIC_API_URL;
+
+  if (configuredUrl) {
+    return configuredUrl;
+  }
+
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("NEXT_PUBLIC_API_URL is not configured for this deployment.");
+  }
+
+  return DEFAULT_API_URL;
 }
 
 async function parseResponse(response: Response) {
