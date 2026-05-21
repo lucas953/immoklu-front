@@ -1,5 +1,6 @@
 import type {
   DocumentCategory,
+  DocumentDirectUploadResult,
   DocumentDownloadUrlResult,
   DocumentRecord,
   DocumentUploadInitResult
@@ -36,6 +37,7 @@ export type UpdateDocumentInput = Partial<
 
 export type DocumentResponse = DocumentRecord;
 export type InitiateDocumentUploadResponse = DocumentUploadInitResult;
+export type DirectDocumentUploadResponse = DocumentDirectUploadResult;
 export type DocumentDownloadUrlResponse = DocumentDownloadUrlResult;
 
 export interface DeleteDocumentResponse {

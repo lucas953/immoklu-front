@@ -5,10 +5,10 @@ import { PageHeader } from "@immoklu/ui";
 import {
   useCreateDocumentMutation,
   useDeleteDocumentMutation,
+  useDirectDocumentUploadMutation,
   useDocumentDownloadUrlMutation,
   useDocumentsQuery,
   useExpensesQuery,
-  useInitiateDocumentUploadMutation,
   useLeasesQuery,
   usePropertiesQuery,
   useTenantsQuery,
@@ -84,7 +84,7 @@ export function DocumentsPageContent() {
   const tenantsQuery = useTenantsQuery();
   const leasesQuery = useLeasesQuery();
   const expensesQuery = useExpensesQuery();
-  const initiateUploadMutation = useInitiateDocumentUploadMutation();
+  const directUploadMutation = useDirectDocumentUploadMutation();
   const createMutation = useCreateDocumentMutation();
   const updateMutation = useUpdateDocumentMutation();
   const deleteMutation = useDeleteDocumentMutation();
@@ -148,21 +148,7 @@ export function DocumentsPageContent() {
         return;
       }
 
-      const upload = await initiateUploadMutation.mutateAsync({
-        originalFileName: selectedFile.name,
-        mimeType: selectedFile.type || "application/octet-stream",
-        sizeBytes: selectedFile.size
-      });
-
-      const uploadResponse = await fetch(upload.uploadUrl, {
-        method: "PUT",
-        headers: upload.headers,
-        body: selectedFile
-      });
-
-      if (!uploadResponse.ok) {
-        throw new Error("Immoklu could not upload the file to storage.");
-      }
+      const upload = await directUploadMutation.mutateAsync(selectedFile);
 
       const payload: CreateDocumentInput = {
         category: values.category,
@@ -189,7 +175,7 @@ export function DocumentsPageContent() {
   });
 
   const activeMutationError =
-    initiateUploadMutation.error?.message ??
+    directUploadMutation.error?.message ??
     createMutation.error?.message ??
     updateMutation.error?.message ??
     deleteMutation.error?.message ??
@@ -406,13 +392,13 @@ export function DocumentsPageContent() {
             <button
               type="submit"
               disabled={
-                initiateUploadMutation.isPending ||
+                directUploadMutation.isPending ||
                 createMutation.isPending ||
                 updateMutation.isPending
               }
               className="w-full rounded-2xl bg-[var(--accent)] px-4 py-3 text-sm font-medium text-[var(--accent-foreground)]"
             >
-              {initiateUploadMutation.isPending || createMutation.isPending || updateMutation.isPending
+              {directUploadMutation.isPending || createMutation.isPending || updateMutation.isPending
                 ? "Saving..."
                 : selectedDocument
                   ? "Update document"

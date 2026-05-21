@@ -8,6 +8,7 @@ import {
   getDocumentDownloadUrl,
   getDocuments,
   initiateDocumentUpload,
+  uploadDocumentFile,
   updateDocument
 } from "../documents";
 
@@ -23,6 +24,12 @@ export function useDocumentsQuery() {
 export function useInitiateDocumentUploadMutation() {
   return useMutation({
     mutationFn: (input: InitiateDocumentUploadInput) => initiateDocumentUpload(input)
+  });
+}
+
+export function useDirectDocumentUploadMutation() {
+  return useMutation({
+    mutationFn: (file: File) => uploadDocumentFile(file)
   });
 }
 

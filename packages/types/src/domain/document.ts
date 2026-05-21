@@ -64,6 +64,13 @@ export interface DocumentUploadInitResult {
   headers: Record<string, string>;
 }
 
+export interface DocumentDirectUploadResult {
+  objectKey: string;
+  originalFileName: string;
+  mimeType: string;
+  sizeBytes: number;
+}
+
 export interface DocumentDownloadUrlResult {
   url: string;
   expiresAt: string;

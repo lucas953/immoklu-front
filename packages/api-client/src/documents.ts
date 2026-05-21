@@ -1,13 +1,14 @@
 import type {
   CreateDocumentInput,
   DeleteDocumentResponse,
+  DirectDocumentUploadResponse,
   DocumentDownloadUrlResponse,
   DocumentResponse,
   InitiateDocumentUploadInput,
   InitiateDocumentUploadResponse,
   UpdateDocumentInput
 } from "@immoklu/types";
-import { apiRequest } from "./http";
+import { ApiError, apiRequest, getApiBaseUrl } from "./http";
 
 export function getDocuments() {
   return apiRequest<DocumentResponse[]>("/documents", {
@@ -20,6 +21,35 @@ export function initiateDocumentUpload(input: InitiateDocumentUploadInput) {
     method: "POST",
     body: JSON.stringify(input)
   });
+}
+
+export async function uploadDocumentFile(file: File) {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch(`${getApiBaseUrl()}/v1/documents/uploads/direct`, {
+    method: "POST",
+    body: formData,
+    credentials: "include"
+  });
+
+  const data = response.headers.get("content-type")?.includes("application/json")
+    ? await response.json()
+    : null;
+
+  if (!response.ok) {
+    const message =
+      typeof data === "object" &&
+      data !== null &&
+      "message" in data &&
+      typeof (data as { message?: unknown }).message === "string"
+        ? (data as { message: string }).message
+        : `Document upload failed with status ${response.status}.`;
+
+    throw new ApiError(message, response.status, data);
+  }
+
+  return data as DirectDocumentUploadResponse;
 }
 
 export function createDocument(input: CreateDocumentInput) {
