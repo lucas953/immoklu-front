@@ -3,6 +3,7 @@ import type {
   DeleteDocumentResponse,
   DirectDocumentUploadResponse,
   DocumentDownloadUrlResponse,
+  DocumentExtractionResponse,
   DocumentResponse,
   InitiateDocumentUploadInput,
   InitiateDocumentUploadResponse,
@@ -75,5 +76,23 @@ export function deleteDocument(documentId: string) {
 export function getDocumentDownloadUrl(documentId: string) {
   return apiRequest<DocumentDownloadUrlResponse>(`/documents/${documentId}/download-url`, {
     method: "GET"
+  });
+}
+
+export function extractDocumentText(documentId: string) {
+  return apiRequest<NonNullable<DocumentExtractionResponse>>(`/documents/${documentId}/extract-text`, {
+    method: "POST"
+  });
+}
+
+export function getDocumentExtraction(documentId: string) {
+  return apiRequest<DocumentExtractionResponse>(`/documents/${documentId}/extraction`, {
+    method: "GET"
+  });
+}
+
+export function parseDocument(documentId: string) {
+  return apiRequest<NonNullable<DocumentExtractionResponse>>(`/documents/${documentId}/parse`, {
+    method: "POST"
   });
 }

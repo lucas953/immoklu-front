@@ -7,14 +7,23 @@ import {
   useDeleteDocumentMutation,
   useDirectDocumentUploadMutation,
   useDocumentDownloadUrlMutation,
+  useDocumentExtractionQuery,
   useDocumentsQuery,
   useExpensesQuery,
+  useExtractDocumentTextMutation,
   useLeasesQuery,
+  useParseDocumentMutation,
   usePropertiesQuery,
   useTenantsQuery,
   useUpdateDocumentMutation
 } from "@immoklu/api-client";
-import type { CreateDocumentInput, DocumentCategory, DocumentRecord, UpdateDocumentInput } from "@immoklu/types";
+import type {
+  CreateDocumentInput,
+  DocumentCategory,
+  DocumentRecord,
+  ParsedInvoiceData,
+  UpdateDocumentInput
+} from "@immoklu/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -89,7 +98,10 @@ export function DocumentsPageContent() {
   const updateMutation = useUpdateDocumentMutation();
   const deleteMutation = useDeleteDocumentMutation();
   const downloadMutation = useDocumentDownloadUrlMutation();
+  const extractTextMutation = useExtractDocumentTextMutation();
+  const parseDocumentMutation = useParseDocumentMutation();
   const [selectedDocument, setSelectedDocument] = useState<DocumentRecord | null>(null);
+  const selectedExtractionQuery = useDocumentExtractionQuery(selectedDocument?.id);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
   const form = useForm<DocumentFormValues>({
@@ -179,7 +191,9 @@ export function DocumentsPageContent() {
     createMutation.error?.message ??
     updateMutation.error?.message ??
     deleteMutation.error?.message ??
-    downloadMutation.error?.message;
+    downloadMutation.error?.message ??
+    extractTextMutation.error?.message ??
+    parseDocumentMutation.error?.message;
 
   const activeProperties =
     propertiesQuery.data?.filter((property) => property.status === "ACTIVE") ?? [];
@@ -229,6 +243,10 @@ export function DocumentsPageContent() {
                     <dt className="font-medium">Tags</dt>
                     <dd>{document.tags.length > 0 ? document.tags.map((tag) => tag.name).join(", ") : "No tags"}</dd>
                   </div>
+                  <div>
+                    <dt className="font-medium">Extraction</dt>
+                    <dd>{extractionStatusLabel(document.extractionStatus)}</dd>
+                  </div>
                 </dl>
 
                 <div className="mt-5 flex flex-wrap gap-3">
@@ -249,6 +267,26 @@ export function DocumentsPageContent() {
                   >
                     Download
                   </button>
+                  {document.mimeType === "application/pdf" ? (
+                    <button
+                      type="button"
+                      onClick={() => void extractTextMutation.mutateAsync(document.id)}
+                      disabled={extractTextMutation.isPending}
+                      className="rounded-2xl border border-[var(--border)] px-4 py-2 text-sm"
+                    >
+                      {extractTextMutation.isPending ? "Extracting..." : "Extract text"}
+                    </button>
+                  ) : null}
+                  {document.extractionStatus === "EXTRACTED" || document.extractionStatus === "NEEDS_OCR" ? (
+                    <button
+                      type="button"
+                      onClick={() => void parseDocumentMutation.mutateAsync(document.id)}
+                      disabled={parseDocumentMutation.isPending}
+                      className="rounded-2xl border border-[var(--border)] px-4 py-2 text-sm"
+                    >
+                      {parseDocumentMutation.isPending ? "Parsing..." : "Parse"}
+                    </button>
+                  ) : null}
                   <button
                     type="button"
                     onClick={async () => {
@@ -389,6 +427,48 @@ export function DocumentsPageContent() {
 
             {activeMutationError ? <FormMessage tone="error">{activeMutationError}</FormMessage> : null}
 
+            {selectedDocument ? (
+              <div className="rounded-3xl border border-[var(--border)] bg-white p-4 text-sm text-neutral-700">
+                <h3 className="text-base font-semibold text-neutral-900">Extraction</h3>
+                <p className="mt-2">
+                  Status: {extractionStatusLabel(selectedDocument.extractionStatus)} /{" "}
+                  {parsingStatusLabel(selectedDocument.parsingStatus)}
+                </p>
+                {selectedExtractionQuery.isPending ? <p className="mt-2">Loading extraction details...</p> : null}
+                {selectedExtractionQuery.data ? (
+                  <div className="mt-3 space-y-2">
+                    <p>
+                      Method: {selectedExtractionQuery.data.extractionMethod} - Text length:{" "}
+                      {selectedExtractionQuery.data.normalizedText?.length ?? 0}
+                    </p>
+                    {selectedExtractionQuery.data.parsedJson ? (
+                      <ParsedInvoiceSummary parsed={selectedExtractionQuery.data.parsedJson} />
+                    ) : selectedDocument.extractionStatus === "EXTRACTED" ||
+                      selectedDocument.extractionStatus === "NEEDS_OCR" ? (
+                      <button
+                        type="button"
+                        onClick={() => void parseDocumentMutation.mutateAsync(selectedDocument.id)}
+                        disabled={parseDocumentMutation.isPending}
+                        className="rounded-2xl border border-[var(--border)] px-4 py-2 text-sm"
+                      >
+                        {parseDocumentMutation.isPending ? "Parsing..." : "Parse extracted text"}
+                      </button>
+                    ) : null}
+                    {Array.isArray(selectedExtractionQuery.data.warnings) &&
+                    selectedExtractionQuery.data.warnings.length > 0 ? (
+                      <ul className="list-disc pl-5">
+                        {selectedExtractionQuery.data.warnings.map((warning: unknown, index: number) => (
+                          <li key={`${warning}-${index}`}>{String(warning)}</li>
+                        ))}
+                      </ul>
+                    ) : null}
+                  </div>
+                ) : selectedDocument.extractionStatus === "NOT_STARTED" ? (
+                  <p className="mt-2">No extraction has been run for this document yet.</p>
+                ) : null}
+              </div>
+            ) : null}
+
             <button
               type="submit"
               disabled={
@@ -429,6 +509,37 @@ function Field({
   );
 }
 
+function ParsedInvoiceSummary({ parsed }: Readonly<{ parsed: ParsedInvoiceData }>) {
+  const rows = [
+    ["Supplier", parsed.supplier_name],
+    ["Invoice number", parsed.invoice_number],
+    ["Invoice date", parsed.invoice_date],
+    ["Due date", parsed.due_date],
+    ["Period", parsed.period_start && parsed.period_end ? `${parsed.period_start} to ${parsed.period_end}` : null],
+    ["Total", parsed.total_amount && parsed.currency ? `${parsed.total_amount} ${parsed.currency}` : parsed.total_amount],
+    ["Utility", parsed.utility_type],
+    ["Address", parsed.service_address],
+    ["Confidence", `${Math.round(parsed.confidence * 100)}%`]
+  ];
+
+  return (
+    <div className="rounded-2xl border border-[var(--border)] bg-[var(--muted)] p-4">
+      <h4 className="font-semibold text-neutral-900">Parsed fields</h4>
+      <dl className="mt-3 grid gap-2">
+        {rows.map(([label, value]) => (
+          <div key={label} className="grid gap-1 sm:grid-cols-[130px_1fr]">
+            <dt className="font-medium text-neutral-700">{label}</dt>
+            <dd className="text-neutral-900">{value || "Not detected"}</dd>
+          </div>
+        ))}
+      </dl>
+      {parsed.missing_fields.length > 0 ? (
+        <p className="mt-3 text-sm text-amber-700">Missing: {parsed.missing_fields.join(", ")}</p>
+      ) : null}
+    </div>
+  );
+}
+
 function parseTagNames(value?: string) {
   return value
     ? Array.from(
@@ -463,6 +574,29 @@ function linkedEntitySummary(document: DocumentRecord) {
 
 function categoryLabel(category: DocumentCategory) {
   return documentCategories.find((option) => option.value === category)?.label ?? category;
+}
+
+function extractionStatusLabel(status: DocumentRecord["extractionStatus"]) {
+  const labels: Record<DocumentRecord["extractionStatus"], string> = {
+    NOT_STARTED: "Not started",
+    EXTRACTED: "Extracted",
+    NEEDS_OCR: "Needs OCR",
+    FAILED: "Failed"
+  };
+
+  return labels[status];
+}
+
+function parsingStatusLabel(status: DocumentRecord["parsingStatus"]) {
+  const labels: Record<DocumentRecord["parsingStatus"], string> = {
+    NOT_STARTED: "Not started",
+    PARSED: "Parsed",
+    NEEDS_REVIEW: "Needs review",
+    CONFIRMED: "Confirmed",
+    FAILED: "Failed"
+  };
+
+  return labels[status];
 }
 
 function formatFileSize(sizeBytes: number) {

@@ -5,9 +5,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createDocument,
   deleteDocument,
+  extractDocumentText,
+  getDocumentExtraction,
   getDocumentDownloadUrl,
   getDocuments,
   initiateDocumentUpload,
+  parseDocument,
   uploadDocumentFile,
   updateDocument
 } from "../documents";
@@ -70,5 +73,37 @@ export function useDeleteDocumentMutation() {
 export function useDocumentDownloadUrlMutation() {
   return useMutation({
     mutationFn: (documentId: string) => getDocumentDownloadUrl(documentId)
+  });
+}
+
+export function useDocumentExtractionQuery(documentId?: string | null) {
+  return useQuery({
+    queryKey: [...documentsQueryKey, documentId, "extraction"],
+    queryFn: () => getDocumentExtraction(documentId ?? ""),
+    enabled: Boolean(documentId)
+  });
+}
+
+export function useExtractDocumentTextMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (documentId: string) => extractDocumentText(documentId),
+    onSuccess: (_data, documentId) => {
+      void queryClient.invalidateQueries({ queryKey: documentsQueryKey });
+      void queryClient.invalidateQueries({ queryKey: [...documentsQueryKey, documentId, "extraction"] });
+    }
+  });
+}
+
+export function useParseDocumentMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (documentId: string) => parseDocument(documentId),
+    onSuccess: (_data, documentId) => {
+      void queryClient.invalidateQueries({ queryKey: documentsQueryKey });
+      void queryClient.invalidateQueries({ queryKey: [...documentsQueryKey, documentId, "extraction"] });
+    }
   });
 }
