@@ -2,6 +2,7 @@ import type {
   DocumentCategory,
   DocumentDirectUploadResult,
   DocumentDownloadUrlResult,
+  DocumentExtractionRecord,
   DocumentRecord,
   DocumentUploadInitResult
 } from "../domain/document";
@@ -36,6 +37,7 @@ export type UpdateDocumentInput = Partial<
 };
 
 export type DocumentResponse = DocumentRecord;
+export type DocumentExtractionResponse = DocumentExtractionRecord | null;
 export type InitiateDocumentUploadResponse = DocumentUploadInitResult;
 export type DirectDocumentUploadResponse = DocumentDirectUploadResult;
 export type DocumentDownloadUrlResponse = DocumentDownloadUrlResult;
